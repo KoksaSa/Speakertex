@@ -40,6 +40,16 @@ A pre-built debug APK is available in the [`android/app/build/outputs/apk/debug/
 
 > **Note:** This is a debug build. For production, run `gradlew assembleRelease` and sign the APK.
 
+## 💻 Desktop (Windows/Mac/Linux)
+
+No installation required! The app runs in any modern browser (Chrome, Edge, Firefox).
+
+1. Download `dist.zip` from the [Releases](https://github.com/KoksaSa/Speakertex/releases) page.
+2. Extract the archive to any folder.
+3. Open `index.html` file in your browser.
+
+> **Tip:** You can also just open the `dist` folder in your file manager and double-click `index.html`.
+
 ## 🚀 Quick Start
 
 ### Prerequisites
