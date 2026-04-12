@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">speaktex</string>
+    <string name="title_activity_main">speaktex</string>
+    <string name="package_name">ru.speaktex.app</string>
+    <string name="custom_url_scheme">ru.speaktex.app</string>
+</resources>

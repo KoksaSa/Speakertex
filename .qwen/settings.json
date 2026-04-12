@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(timeout *)",
+      "Bash(tasklist)",
+      "Bash(findstr *)",
+      "Bash(start *)",
+      "Bash(npx *)",
+      "Bash(taskkill *)",
+      "Bash(npm install)",
+      "Bash(del *)",
+      "Bash(powershell *)",
+      "Bash(netstat *)",
+      "Bash(cmd *)",
+      "Bash(gradlew.bat *)",
+      "Bash(dir *)",
+      "Bash(\"c:\\program files\\git\\cmd\\git.exe\" *)"
+    ]
+  },
+  "$version": 3
+}

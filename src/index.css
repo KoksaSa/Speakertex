@@ -1,0 +1,166 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Глобальные стили */
+body {
+  @apply bg-gray-50 text-gray-800 font-sans antialiased;
+}
+
+/* Тёмная тема через CSS переменные */
+html.dark-theme body,
+body.dark-theme {
+  background-color: #111827 !important;
+  color: #e5e7eb !important;
+}
+
+.dark-theme .app-container {
+  background-color: #111827 !important;
+  color: #e5e7eb !important;
+}
+
+.dark-theme .dark-card {
+  background-color: #1f2937;
+  border-color: #374151;
+  color: #e5e7eb;
+}
+
+.dark-theme .dark-input {
+  background-color: #1f2937;
+  border-color: #4b5563;
+  color: #e5e7eb;
+}
+
+.dark-theme .dark-btn {
+  background-color: #374151;
+  color: #e5e7eb;
+}
+
+.dark-theme .dark-btn:hover {
+  background-color: #4b5563;
+}
+
+.dark-theme .dark-text {
+  color: #e5e7eb;
+}
+
+.dark-theme .dark-text-secondary {
+  color: #9ca3af;
+}
+
+.dark-theme .dark-border {
+  border-color: #374151;
+}
+
+/* Адаптивный контейнер */
+.container {
+  @apply max-w-4xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+/* Заголовок */
+h1 {
+  @apply text-3xl font-bold mb-4 text-center sm:text-left;
+}
+
+/* Форма ввода текста */
+textarea,
+input[type="text"],
+input[type="range"] {
+  @apply w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition;
+}
+
+textarea {
+  @apply h-32 resize-none;
+}
+
+/* Выбор языка */
+select {
+  @apply p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition;
+}
+
+/* Ползунок скорости */
+input[type="range"] {
+  @apply w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  @apply appearance-none w-5 h-5 bg-blue-500 rounded-full cursor-pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  @apply w-5 h-5 bg-blue-500 rounded-full cursor-pointer;
+}
+
+/* Кнопки управления */
+.control-panel {
+  @apply flex flex-wrap gap-2 mt-4;
+}
+
+.control-panel button {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+}
+
+.control-panel .start {
+  @apply bg-green-500 hover:bg-green-600 text-white;
+}
+
+.control-panel .pause {
+  @apply bg-blue-500 hover:bg-blue-600 text-white;
+}
+
+.control-panel .stop {
+  @apply bg-red-500 hover:bg-red-600 text-white;
+}
+
+.control-panel .check {
+  @apply bg-purple-500 hover:bg-purple-600 text-white;
+}
+
+/* Поле ввода текста пользователя */
+.dictation-input {
+  @apply w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition;
+}
+
+.dictation-input:focus {
+  @apply outline-none;
+}
+
+/* Результат проверки */
+.result-display {
+  @apply mt-6 p-4 bg-green-50 border-l-4 border-green-500 rounded-lg;
+}
+
+.result-display h3 {
+  @apply text-xl font-semibold mb-2;
+}
+
+.result-display p {
+  @apply mb-1;
+}
+
+.result-display .error-word {
+  @apply font-bold text-red-600;
+}
+
+/* Адаптивность */
+@media (max-width: 640px) {
+  .container {
+    @apply px-4;
+  }
+
+  h1 {
+    @apply text-2xl;
+  }
+
+  textarea {
+    @apply h-24;
+  }
+
+  .control-panel {
+    @apply flex-col;
+  }
+
+  .control-panel button {
+    @apply w-full;
+  }
+}
