@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
+    base: './',
     plugins: [react(), envReplacePlugin(env)],
     server: {
       host: '0.0.0.0',
