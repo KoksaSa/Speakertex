@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
     <meta name="telegram:card" content="none">
     <meta property="og:image" content="">
 
-    
     <!-- Основные Open Graph теги -->
     <meta property="og:title" content="speaktex" />
     <meta property="og:description" content="Boost your learning & productivity: dictate text, check spelling, improve typing speed, memorize info, and practice foreign languages with voice input!" />
@@ -15,46 +14,24 @@
     <meta property="og:url" content="https://speaktex.ru/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="speaktex" />
-    
+
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="speaktex" />
     <meta name="twitter:description" content="Boost your learning & productivity: dictate text, check spelling, improve typing speed, memorize info, and practice foreign languages with voice input!" />
     <meta name="twitter:image" content="https://speaktex.ru/images/preview.jpg" />
     <meta name="twitter:site" content="@yourtwitter" />
-    
+
     <!-- Дополнительные -->
     <meta name="description" content="Boost your learning & productivity: dictate text, check spelling, improve typing speed, memorize info, and practice foreign languages with voice input!" />
     <title>speaktex — Dictation App</title>
-    
+
     <!-- Иконки -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-  <link rel="icon" type="image/png" href="/logo.png" />
-
-      <!-- Yandex.Metrika counter -->
-    <script type="text/javascript" defer>
-        (function(m,e,t,r,i,k,a){
-            m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-            m[i].l=1*new Date();
-            for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-            k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
-        })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=%VITE_YANDEX_METRIKA_ID%', 'ym');
-
-        ym(%VITE_YANDEX_METRIKA_ID%, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", accurateTrackBounce:true, trackLinks:true});
-    </script>
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" href="/logo.png" />
 </head>
 <body>
-    <!-- Yandex.RTB -->
-    <script>
-        window.yaContextCb.push(() => {
-            Ya.Context.AdvManager.render({
-                "blockId": "%VITE_YANDEX_RTB_BLOCK_ID%",
-                "type": "floorAd",
-                "platform": "touch"
-            })
-        })
-    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
 </body>
