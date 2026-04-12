@@ -32,7 +32,25 @@
     <link rel="icon" type="image/png" href="./logo.png" />
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+        <div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;padding:20px;text-align:center;">
+            <div>
+                <h1>🎙️ speaktex</h1>
+                <p>Loading...</p>
+                <p style="color:#888;font-size:12px;">If you see this for more than 10 seconds, your device may not support this app.</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Отладка: показываем сообщение если JS не загружается
+        window.onerror = function(msg, url, line) {
+            var errDiv = document.createElement('div');
+            errDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#ff0000;color:#fff;padding:20px;font-size:16px;z-index:99999;';
+            errDiv.textContent = 'Error: ' + msg + ' (line ' + line + ')';
+            document.body.appendChild(errDiv);
+            return false;
+        };
+    </script>
     <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>

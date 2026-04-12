@@ -127,6 +127,7 @@ const App: React.FC = () => {
 
   // Загружаем доступные голоса TTS
   useEffect(() => {
+    if (!('speechSynthesis' in window)) return;
     const loadVoices = () => {
       const voices = window.speechSynthesis.getVoices();
       if (voices.length > 0) {
