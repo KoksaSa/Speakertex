@@ -179,7 +179,7 @@ VITE_YANDEX_RTB_BLOCK_ID=
 
 ## 📄 License
 
-MIT License — feel free to use this project for personal or commercial purposes.
+Non-Commercial License — free for personal and educational use only. Commercial use is not permitted. See [LICENSE](LICENSE) for details.
 
 ## 🤝 Contributing
 
