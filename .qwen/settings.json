@@ -15,7 +15,8 @@
       "Bash(cmd *)",
       "Bash(gradlew.bat *)",
       "Bash(dir *)",
-      "Bash(\"c:\\program files\\git\\cmd\\git.exe\" *)"
+      "Bash(\"c:\\program files\\git\\cmd\\git.exe\" *)",
+      "Bash(ren *)"
     ]
   },
   "$version": 3

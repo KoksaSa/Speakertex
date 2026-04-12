@@ -26,6 +26,14 @@ A modern dictation application that uses text-to-speech (TTS) to help you practi
 - **📱 Android support** — Built with Capacitor for native Android experience
 - **💾 Auto-save** — Application state is preserved between sessions
 
+## 📸 Screenshots
+
+### Main Screen
+![Main Screen](screanshots/main-screen.png)
+
+### Check Results
+![Check Results](screanshots/check-results.png)
+
 ## 📱 Download Android APK
 
 A pre-built debug APK is available in the [`android/app/build/outputs/apk/debug/`](android/app/build/outputs/apk/debug/app-debug.apk) directory.
