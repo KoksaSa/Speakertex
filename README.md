@@ -61,8 +61,8 @@ No installation required! The app runs in any modern browser (Chrome, Edge, Fire
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/speaktex.git
-cd speaktex
+git clone https://github.com/KoksaSa/Speakertex.git
+cd Speakertex
 
 # Install dependencies
 npm install
