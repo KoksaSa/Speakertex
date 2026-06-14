@@ -1,4 +1,5 @@
 # 🎙️ speaktex — Dictation App
+https://koksasa.github.io/Speakertex/
 
 A modern dictation application that uses text-to-speech (TTS) to help you practice typing, improve spelling, and learn foreign languages through voice input.
 
