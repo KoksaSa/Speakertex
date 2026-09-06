@@ -19,6 +19,10 @@ public class MainActivity extends BridgeActivity implements TextToSpeech.OnInitL
     private String currentSpeakText = "";
     private String currentLang = "ru-RU";
     private float currentRate = 1.0f;
+    // Позиция последнего произнесённого символа (для честной паузы/возобновления)
+    // Обновляется через UtteranceProgressListener#onRangeStart (API 26+);
+    // на Android < 8.0 остаётся 0 — resume перечитывает текст с начала, как раньше.
+    private volatile int lastSpokenOffset = 0;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -56,6 +60,12 @@ public class MainActivity extends BridgeActivity implements TextToSpeech.OnInitL
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                 @Override
                 public void onStart(String utteranceId) {}
+
+                @Override
+                public void onRangeStart(String utteranceId, int start, int end, int frame) {
+                    // API 26+: запоминаем, до какого символа дочитали
+                    lastSpokenOffset = start;
+                }
 
                 @Override
                 public void onDone(String utteranceId) {
@@ -108,6 +118,7 @@ public class MainActivity extends BridgeActivity implements TextToSpeech.OnInitL
                     currentSpeakText = text;
                     currentLang = lang;
                     currentRate = rate;
+                    lastSpokenOffset = 0;
 
                     tts.stop();
 
@@ -148,6 +159,16 @@ public class MainActivity extends BridgeActivity implements TextToSpeech.OnInitL
         public void resume() {
             runOnUiThread(() -> {
                 if (ttsReady && tts != null && !currentSpeakText.isEmpty()) {
+                    // Возобновляем с последней произнесённой позиции, а не с начала
+                    String textToSpeak = currentSpeakText;
+                    if (lastSpokenOffset > 0 && lastSpokenOffset < currentSpeakText.length()) {
+                        textToSpeak = currentSpeakText.substring(lastSpokenOffset);
+                    }
+                    // Если озвучка уже была дочитана до конца — перечитываем с начала,
+                    // чтобы цепочка диктовки продолжилась (onDone сработает и вернёт управление в JS)
+                    currentSpeakText = textToSpeak;
+                    lastSpokenOffset = 0;
+
                     Locale locale = Locale.forLanguageTag(currentLang);
                     int result = tts.setLanguage(locale);
                     if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
@@ -157,7 +178,7 @@ public class MainActivity extends BridgeActivity implements TextToSpeech.OnInitL
 
                     HashMap<String, String> params = new HashMap<>();
                     params.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "utterance_id");
-                    tts.speak(currentSpeakText, TextToSpeech.QUEUE_FLUSH, params);
+                    tts.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, params);
                 }
             });
         }

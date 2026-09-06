@@ -16,6 +16,7 @@ A modern dictation application that uses text-to-speech (TTS) to help you practi
 - **🎙️ Voice dictation** — Listen to sentences and practice typing them
 - **🔁 Repeat modes** — Choose 1, 2, or 3 repetitions per sentence
 - **📊 Accuracy check** — See your typing accuracy percentage and errors in real-time
+- **🔤 Strict punctuation mode** — Optionally count punctuation marks and apostrophes when checking (diff-based word matching)
 - **🎯 Training mode** — Get real-time error highlighting as you type
 - **🔀 Random order** — Dictate sentences in sequential or random order
 - **⏱️ Typing speed** — Track your characters per minute (CPM)
@@ -37,7 +38,13 @@ A modern dictation application that uses text-to-speech (TTS) to help you practi
 
 ## 📱 Download Android APK
 
-A pre-built debug APK is available in the [`android/app/build/outputs/apk/debug/`](android/app/build/outputs/apk/debug/app-debug.apk) directory.
+A pre-built debug APK (`Speakertex.apk`) is located in the repository root. Rebuild it yourself after code changes:
+
+```bash
+npm run build && npx cap sync android
+cd android && gradlew assembleDebug
+# APK will be at: android/app/build/outputs/apk/debug/app-debug.apk
+```
 
 > **Note:** This is a debug build. For production, run `gradlew assembleRelease` and sign the APK.
 

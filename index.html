@@ -4,23 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-    <meta name="telegram:card" content="none">
-    <meta property="og:image" content="">
-
     <!-- Основные Open Graph теги -->
-    <meta property="og:title" content="speaktex" />
+    <meta property="og:title" content="speaktex — Dictation App" />
     <meta property="og:description" content="Boost your learning & productivity: dictate text, check spelling, improve typing speed, memorize info, and practice foreign languages with voice input!" />
-    <meta property="og:image" content="https://speaktex.ru/images/preview.jpg" />
-    <meta property="og:url" content="https://speaktex.ru/" />
+    <meta property="og:image" content="https://koksasa.github.io/Speakertex/preview.jpg" />
+    <meta property="og:url" content="https://koksasa.github.io/Speakertex/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="speaktex" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="speaktex" />
+    <meta name="twitter:title" content="speaktex — Dictation App" />
     <meta name="twitter:description" content="Boost your learning & productivity: dictate text, check spelling, improve typing speed, memorize info, and practice foreign languages with voice input!" />
-    <meta name="twitter:image" content="https://speaktex.ru/images/preview.jpg" />
-    <meta name="twitter:site" content="@yourtwitter" />
+    <meta name="twitter:image" content="https://koksasa.github.io/Speakertex/preview.jpg" />
 
     <!-- Дополнительные -->
     <meta name="description" content="Boost your learning & productivity: dictate text, check spelling, improve typing speed, memorize info, and practice foreign languages with voice input!" />
@@ -30,8 +26,22 @@
     <link rel="icon" type="image/x-icon" href="./favicon.ico" />
     <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png" />
     <link rel="icon" type="image/png" href="./logo.png" />
+
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript">
+        (function(m,e,t,r,i,k,a){
+            m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+            m[i].l=1*new Date();
+            for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+            k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+        })(window, document, 'script', 'https://mc.yandex.ru/metrika/tag.js?id=%VITE_YANDEX_METRIKA_ID%', 'ym');
+
+        ym(%VITE_YANDEX_METRIKA_ID%, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+    </script>
+    <!-- /Yandex.Metrika counter -->
 </head>
 <body>
+    <noscript><div><img src="https://mc.yandex.ru/watch/%VITE_YANDEX_METRIKA_ID%" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
     <div id="root">
         <div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;padding:20px;text-align:center;">
             <div>
@@ -41,16 +51,6 @@
             </div>
         </div>
     </div>
-    <script>
-        // Отладка: показываем сообщение если JS не загружается
-        window.onerror = function(msg, url, line) {
-            var errDiv = document.createElement('div');
-            errDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#ff0000;color:#fff;padding:20px;font-size:16px;z-index:99999;';
-            errDiv.textContent = 'Error: ' + msg + ' (line ' + line + ')';
-            document.body.appendChild(errDiv);
-            return false;
-        };
-    </script>
     <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>

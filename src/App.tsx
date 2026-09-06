@@ -7,6 +7,7 @@ import MyTextsModal from './components/MyTextsModal';
 import useDictation from './hooks/useDictation';
 import HelpPage from './components/HelpPage';
 import { dictationTextsSimple, Language, Difficulty } from './utils/dictationTextsSimple';
+import { splitIntoSentences } from './utils/textUtils';
 
 // Проверка доступности TTS
 const isTTSAvailable = (): boolean => {
@@ -29,6 +30,7 @@ interface AppState {
   showOriginalTextInput: boolean;
   isTrainingMode: boolean;
   orderMode: 'sequential' | 'random';
+  strictPunctuation: boolean;
 }
 
 const App: React.FC = () => {
@@ -66,6 +68,7 @@ const App: React.FC = () => {
     total: number;
     errorWords: Array<{ original: string; user: string; hasError: boolean }>;
     originalSentences?: string[];
+    errorSentenceIndices?: number[];
     typingTime?: number;
     cpm?: number;
   } | null>(null);
@@ -74,6 +77,7 @@ const App: React.FC = () => {
   const [pauseDuration, setPauseDuration] = useState(savedState.pauseDuration || 500);
   const [repeatCount, setRepeatCount] = useState<1 | 2 | 3>(savedState.repeatCount || 3);
   const [orderMode, setOrderMode] = useState<'sequential' | 'random'>(savedState.orderMode || 'sequential');
+  const [strictPunctuation, setStrictPunctuation] = useState(savedState.strictPunctuation || false);
   const [showResult, setShowResult] = useState(false);
 
   const [showOriginalTextInput, setShowOriginalTextInput] = useState(savedState.showOriginalTextInput !== undefined ? savedState.showOriginalTextInput : true);
@@ -117,6 +121,16 @@ const App: React.FC = () => {
   const stopClickCountRef = useRef<number>(0);
   const lastStopTimeRef = useRef<number>(0);
   const dictationInputRef = useRef<{ focus: () => void }>(null);
+  const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Отмена отсчёта 3-2-1 (например, при нажатии «Стоп» во время отсчёта)
+  const cancelCountdown = () => {
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current);
+      countdownTimerRef.current = null;
+    }
+    setCountdown(0);
+  };
 
   // Применяем тему при изменении
   useEffect(() => {
@@ -149,6 +163,7 @@ const App: React.FC = () => {
       pauseDuration,
       repeatCount,
       orderMode,
+      strictPunctuation,
       showOriginalTextInput,
       isTrainingMode,
     };
@@ -161,6 +176,7 @@ const App: React.FC = () => {
     pauseDuration,
     repeatCount,
     orderMode,
+    strictPunctuation,
     showOriginalTextInput,
     isTrainingMode,
   ]);
@@ -176,10 +192,12 @@ const App: React.FC = () => {
       setPauseDuration(500);
       setRepeatCount(3);
       setOrderMode('sequential');
+      setStrictPunctuation(false);
       setShowOriginalTextInput(true);
       setIsTrainingMode(false);
       setResult(null);
       setShowResult(false);
+      cancelCountdown();
       stopDictation();
       setTypingStartTime(null);
       stopClickCountRef.current = 0;
@@ -253,6 +271,10 @@ const App: React.FC = () => {
       repeatCount1Desc: 'Каждое предложение диктуется 1 раз',
       repeatCount2Desc: 'Каждое предложение диктуется 2 раза',
       repeatCount3Desc: 'Каждое предложение диктуется 3 раза (нормально → медленно → последние 3 слова)',
+      strictPunctLabel: 'Проверка пунктуации:',
+      strictPunctOff: 'Не учитывать',
+      strictPunctOn: 'Учитывать',
+      strictPunctDesc: 'Учитывать знаки препинания и апострофы при проверке текста. По умолчанию знаки игнорируются.',
       noTextsAvailable: 'Для выбранного языка нет доступных текстов.',
       helpButton: 'Справка',
       myTextsButton: 'Мои тексты',
@@ -324,6 +346,10 @@ const App: React.FC = () => {
       repeatCount1Desc: 'Each sentence is dictated 1 time',
       repeatCount2Desc: 'Each sentence is dictated 2 times',
       repeatCount3Desc: 'Each sentence is dictated 3 times (normal → slow → last 3 words)',
+      strictPunctLabel: 'Punctuation check:',
+      strictPunctOff: 'Ignore',
+      strictPunctOn: 'Include',
+      strictPunctDesc: 'Count punctuation marks and apostrophes when checking your text. By default they are ignored.',
       noTextsAvailable: 'No texts available for selected language.',
     },
     'es-ES': {
@@ -370,6 +396,10 @@ const App: React.FC = () => {
       repeatCount1Desc: 'Cada oración se dicta 1 vez',
       repeatCount2Desc: 'Cada oración se dicta 2 veces',
       repeatCount3Desc: 'Cada oración se dicta 3 veces (normal → lento → últimas 3 palabras)',
+      strictPunctLabel: 'Verificación de puntuación:',
+      strictPunctOff: 'Ignorar',
+      strictPunctOn: 'Incluir',
+      strictPunctDesc: 'Contar los signos de puntuación y apóstrofos al verificar el texto. Por defecto se ignoran.',
       noTextsAvailable: 'No hay textos disponibles para el idioma seleccionado.',
       helpTitle: 'Ayuda con la aplicación',
       helpIntro: '¡Bienvenido a la aplicación de dictado!',
@@ -438,6 +468,10 @@ const App: React.FC = () => {
       repeatCount1Desc: 'Chaque phrase est dictée 1 fois',
       repeatCount2Desc: 'Chaque phrase est dictée 2 fois',
       repeatCount3Desc: 'Chaque phrase est dictée 3 fois (normal → lent → 3 derniers mots)',
+      strictPunctLabel: 'Vérification de la ponctuation :',
+      strictPunctOff: 'Ignorer',
+      strictPunctOn: 'Inclure',
+      strictPunctDesc: 'Prendre en compte les signes de ponctuation et les apostrophes lors de la vérification. Par défaut, ils sont ignorés.',
       noTextsAvailable: 'Aucun texte disponible pour la langue sélectionnée.',
       helpTitle: 'Aide pour l\'application',
       helpIntro: 'Bienvenue dans l\'application de dictée !',
@@ -506,6 +540,10 @@ const App: React.FC = () => {
       repeatCount1Desc: 'Jeder Satz wird 1 Mal diktiert',
       repeatCount2Desc: 'Jeder Satz wird 2 Mal diktiert',
       repeatCount3Desc: 'Jeder Satz wird 3 Mal diktiert (normal → langsam → letzte 3 Wörter)',
+      strictPunctLabel: 'Interpunktionsprüfung:',
+      strictPunctOff: 'Ignorieren',
+      strictPunctOn: 'Einbeziehen',
+      strictPunctDesc: 'Satzzeichen und Apostrophe beim Prüfen des Textes berücksichtigen. Standardmäßig werden sie ignoriert.',
       noTextsAvailable: 'Keine Texte für die ausgewählte Sprache verfügbar.',
       helpTitle: 'Hilfe zur Anwendung',
       helpIntro: 'Willkommen in der Diktier-App!',
@@ -574,6 +612,10 @@ const App: React.FC = () => {
       repeatCount1Desc: 'Әрбір сөйлем 1 рет диктантталады',
       repeatCount2Desc: 'Әрбір сөйлем 2 рет диктантталады',
       repeatCount3Desc: 'Әрбір сөйлем 3 рет диктантталады (қалыпты → баяу → соңғы 3 сөз)',
+      strictPunctLabel: 'Пунктуацияны тексеру:',
+      strictPunctOff: 'Ескермеу',
+      strictPunctOn: 'Есепке алу',
+      strictPunctDesc: 'Мәтінді тексергенде пунктуация белгілері мен апострофтар есептелінеді. Әдетте олар ескерілмейді.',
       noTextsAvailable: 'Таңдалған тілде мәтіндер жоқ.',
       helpTitle: 'Қолданба бойынша анықтама',
       helpIntro: 'Диктант қолданбасына қош келдіңіз!',
@@ -645,17 +687,23 @@ const App: React.FC = () => {
     stopClickCountRef.current = 0;
     lastStopTimeRef.current = 0;
 
+    // Отменяем предыдущий отсчёт, если был
+    cancelCountdown();
+
     // Запускаем отсчёт 3-2-1, потом начинаем диктовку
     setCountdown(3);
 
     let count = 3;
-    const timer = setInterval(() => {
+    countdownTimerRef.current = setInterval(() => {
       count--;
       if (count > 0) {
         setCountdown(count);
       } else {
         setCountdown(0);
-        clearInterval(timer);
+        if (countdownTimerRef.current) {
+          clearInterval(countdownTimerRef.current);
+          countdownTimerRef.current = null;
+        }
         startDictation();
         // Автофокус на поле ввода ПОСЛЕ отсчёта
         setTimeout(() => {
@@ -666,6 +714,15 @@ const App: React.FC = () => {
   };
 
   const handleStop = () => {
+    // Если нажали «Стоп» во время отсчёта 3-2-1 — отменяем отсчёт
+    if (countdownTimerRef.current) {
+      cancelCountdown();
+      stopDictation();
+      stopClickCountRef.current = 0;
+      lastStopTimeRef.current = 0;
+      return;
+    }
+
     const now = Date.now();
     
     if (now - lastStopTimeRef.current > 1500) {
@@ -694,26 +751,11 @@ const App: React.FC = () => {
   };
 
   const handleCorrection = () => {
-    if (result && result.errorWords && result.originalSentences && result.errors > 0) {
-      const originalSentences = result.originalSentences;
-      const errorWords = result.errorWords;
-
-      const sentencesWithErrors = new Set<number>();
-      let wordIndex = 0;
-
-      for (let sentIndex = 0; sentIndex < originalSentences.length; sentIndex++) {
-        const sentence = originalSentences[sentIndex];
-        const wordsInSentence = sentence.trim().split(/\s+/);
-
-        for (let i = 0; i < wordsInSentence.length; i++) {
-          if (wordIndex < errorWords.length && errorWords[wordIndex].hasError) {
-            sentencesWithErrors.add(sentIndex);
-          }
-          wordIndex++;
-        }
-      }
-
-      const correctionText = Array.from(sentencesWithErrors)
+    if (result && result.errors > 0 && result.errorSentenceIndices && result.errorSentenceIndices.length > 0) {
+      // Берём предложения с ошибками по индексам, посчитанным при проверке
+      const originalSentences = splitIntoSentences(originalText);
+      const correctionText = result.errorSentenceIndices
+        .filter(index => index >= 0 && index < originalSentences.length)
         .map(index => originalSentences[index])
         .join(' ');
 
@@ -743,11 +785,9 @@ const App: React.FC = () => {
 
     const cpm = typingTime > 0 ? Math.round(inputText.length / typingTime) : 0;
 
-    const originalSentences = originalText.split(/[.!?]+/)
-      .filter(s => s.trim().length > 0)
-      .map(s => s.trim() + '.');
+    const originalSentences = splitIntoSentences(originalText);
 
-    const res = checkResults(inputText);
+    const res = checkResults(inputText, strictPunctuation);
     setResult({ ...res, originalSentences, typingTime, cpm });
     setShowResult(true);
     
@@ -816,6 +856,7 @@ const App: React.FC = () => {
                 setShowResult(false);
                 stopDictation();
                 setTypingStartTime(null);
+                cancelCountdown();
 
                 stopClickCountRef.current = 0;
                 lastStopTimeRef.current = 0;
@@ -903,6 +944,36 @@ const App: React.FC = () => {
           {orderMode === 'sequential' 
             ? t('orderSequentialDesc') 
             : t('orderRandomDesc')}
+        </p>
+      </div>
+
+      {/* ✅ Строгость проверки пунктуации */}
+      <div className="mb-6">
+        <label className="block mb-2 font-medium">{t('strictPunctLabel')}</label>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setStrictPunctuation(false)}
+            className={`flex-1 p-3 rounded-lg transition-colors ${
+              !strictPunctuation
+                ? 'bg-blue-500 text-white'
+                : dk(isDark, 'bg-gray-100 hover:bg-gray-200', 'bg-gray-700 hover:bg-gray-600')
+            }`}
+          >
+            {t('strictPunctOff')}
+          </button>
+          <button
+            onClick={() => setStrictPunctuation(true)}
+            className={`flex-1 p-3 rounded-lg transition-colors ${
+              strictPunctuation
+                ? 'bg-blue-500 text-white'
+                : dk(isDark, 'bg-gray-100 hover:bg-gray-200', 'bg-gray-700 hover:bg-gray-600')
+            }`}
+          >
+            {t('strictPunctOn')}
+          </button>
+        </div>
+        <p className="text-sm text-gray-500 mt-1">
+          {t('strictPunctDesc')}
         </p>
       </div>
 

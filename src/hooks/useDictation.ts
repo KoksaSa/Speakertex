@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import useNativeTTS from './useNativeTTS';
+import { splitIntoSentences, compareTexts } from '../utils/textUtils';
 
 interface UseDictationProps {
   text: string;
@@ -87,21 +88,10 @@ export default function useDictation({
     randomOrderIndicesRef.current = shuffleArray(indices);
   }, [shuffleArray]);
 
-  // Разбиваем текст на предложения
+  // Разбиваем текст на предложения (с сохранением исходной пунктуации)
   useEffect(() => {
     if (!text) return;
-    const lines = text.split('\n').filter(line => line.trim().length > 0);
-    const sentences = [];
-    for (const line of lines) {
-      if (/[.!?]/.test(line)) {
-        const parts = line.split(/[.!?]+/).filter(part => part.trim().length > 0);
-        for (const part of parts) {
-          sentences.push(part.trim() + '.');
-        }
-      } else {
-        sentences.push(line.trim());
-      }
-    }
+    const sentences = splitIntoSentences(text);
     sentencesRef.current = sentences;
     if (orderMode === 'random' && sentences.length > 0) {
       initializeRandomOrder();
@@ -113,7 +103,6 @@ export default function useDictation({
 
   // Обработчик окончания озвучки — объявлен ДО useNativeTTS
   const handleUtteranceEnd = useCallback(() => {
-    console.log('Utterance ended, step:', currentStepRef.current, 'index:', currentIndexRef.current);
     if (!isActiveRef.current || isPausedRef.current) return;
 
     const step = currentStepRef.current;
@@ -143,7 +132,6 @@ export default function useDictation({
           currentStepRef.current = 0;
           doSpeak(nextSentence, langRef.current, 1 * speedRef.current, voice);
         } else {
-          console.log('All sentences done');
           setIsPlaying(false);
           isActiveRef.current = false;
           setCurrentRepeat(1);
@@ -169,7 +157,6 @@ export default function useDictation({
             currentStepRef.current = 0;
             doSpeak(nextSentence, langRef.current, 1 * speedRef.current, voice);
           } else {
-            console.log('All sentences done');
             setIsPlaying(false);
             isActiveRef.current = false;
           }
@@ -205,7 +192,6 @@ export default function useDictation({
               currentStepRef.current = 0;
               doSpeak(nextSentence, langRef.current, 1 * speedRef.current, voice);
             } else {
-              console.log('All sentences done');
               setIsPlaying(false);
               isActiveRef.current = false;
             }
@@ -249,7 +235,6 @@ export default function useDictation({
   // Функция озвучивания
   const speak = useCallback((sentenceText: string, rate: number = 1, step: number, index: number) => {
     if (!isActiveRef.current || isPausedRef.current) return;
-    console.log('Speaking:', sentenceText, 'at rate:', rate, 'step:', step, 'index:', index);
     currentStepRef.current = step;
     currentSentenceRef.current = sentenceText;
     currentIndexRef.current = index;
@@ -278,13 +263,11 @@ export default function useDictation({
   }, [speak, getSentenceByMode, initializeRandomOrder]);
 
   const startDictation = useCallback(() => {
-    console.log('startDictation called, sentences:', sentencesRef.current);
     if (sentencesRef.current.length === 0) return;
     startSentenceDictation(0);
   }, [startSentenceDictation]);
 
   const pauseDictation = useCallback(() => {
-    console.log('pauseDictation called, isPlaying:', isPlayingRef.current, 'isPaused:', isPausedRef.current);
     if (!isPlayingRef.current && !isPausedRef.current) {
       startDictation();
       return;
@@ -293,17 +276,14 @@ export default function useDictation({
       ttsPauseRef.current?.();
       if (timerRef.current) clearTimeout(timerRef.current);
       setIsPaused(true);
-      console.log('Dictation paused');
     } else if (isPausedRef.current) {
       setIsPaused(false);
       isActiveRef.current = true;
       ttsResumeRef.current?.();
-      console.log('Dictation resumed');
     }
   }, [startDictation]);
 
   const stopDictation = useCallback(() => {
-    console.log('stopDictation called');
     if (timerRef.current) clearTimeout(timerRef.current);
     ttsStopRef.current?.();
     setIsPlaying(false);
@@ -333,43 +313,30 @@ export default function useDictation({
     setIsTrainingMode(prev => !prev);
   }, []);
 
-  const checkResults = useCallback((userInput: string): {
-    correct: string;
-    errors: number;
-    total: number;
-    errorWords: Array<{ original: string; user: string; hasError: boolean }>;
-  } => {
-    const removePunctuation = (str: string) => str.replace(/[.,!?;:—\-"'""'']/g, '');
-    const fullOriginal = sentencesRef.current.join(' ').replace(/\s+/g, ' ').trim();
-    const normalize = (str: string) => str.replace(/\s+/g, ' ').replace(/\n/g, ' ').trim();
-    const original = normalize(removePunctuation(fullOriginal));
-    const user = normalize(removePunctuation(userInput));
-    let errors = 0;
-    const originalWords = original.split(' ');
-    const userWords = user.split(' ');
-    const minLen = Math.min(originalWords.length, userWords.length);
-    const maxLen = Math.max(originalWords.length, userWords.length);
-    const errorWords = [];
-    for (let i = 0; i < minLen; i++) {
-      if (originalWords[i] !== userWords[i]) {
-        errors += 1;
-        errorWords.push({ original: originalWords[i], user: userWords[i], hasError: true });
-      } else {
-        errorWords.push({ original: originalWords[i], user: userWords[i], hasError: false });
-      }
+  const checkResults = useCallback((userInput: string, strictPunctuation: boolean = false) => {
+    // Сам алгоритм (LCS-выравнивание слов, строгость пунктуации, маппинг на предложения)
+    // вынесен в utils/textUtils.ts — см. compareTexts()
+    //
+    // При случайном порядке диктовки эталон берём В ПОРЯДКЕ ДИКТОВКИ:
+    // пользователь печатает предложения в том порядке, в котором услышал.
+    const orderMode = orderModeRef.current;
+    const order = orderMode === 'random' && randomOrderIndicesRef.current.length > 0
+      ? randomOrderIndicesRef.current
+      : null;
+    const refSentences = order
+      ? order.map(idx => sentencesRef.current[idx]).filter(Boolean)
+      : sentencesRef.current;
+
+    const res = compareTexts(refSentences, userInput, strictPunctuation);
+
+    // Переводим индексы предложений из порядка диктовки обратно в порядок текста
+    // (нужно режиму «Работа над ошибками»)
+    if (order) {
+      res.errorSentenceIndices = res.errorSentenceIndices
+        .map(i => order[i])
+        .filter((idx): idx is number => typeof idx === 'number');
     }
-    for (let i = minLen; i < maxLen; i++) {
-      if (i < originalWords.length) {
-        errors += 1;
-        errorWords.push({ original: originalWords[i], user: '', hasError: true });
-      } else if (i < userWords.length) {
-        errors += 1;
-        errorWords.push({ original: '', user: userWords[i], hasError: true });
-      }
-    }
-    const total = originalWords.length;
-    const percentCorrect = total > 0 ? ((total - errors) / total) * 100 : 100;
-    return { correct: `${Math.round(percentCorrect)}%`, errors, total, errorWords };
+    return res;
   }, []);
 
   return {
