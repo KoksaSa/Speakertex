@@ -18,34 +18,34 @@ export interface PiperSnapshot {
 }
 
 /** Голоса Piper по языкам диктовки приложения (ключи = selectedLang).
- *  label — «человеческое» имя диктора (имя + отчество/фамилия) + пол и размер модели. */
+ *  label — «человеческое» имя диктора (имя + отчество/фамилия). */
 export const PIPER_VOICES: Record<string, Array<{ id: tts.VoiceId; label: string }>> = {
   'ru-RU': [
-    { id: 'ru_RU-irina-medium', label: 'Ирина Владимировна (женский)' },
-    { id: 'ru_RU-dmitri-medium', label: 'Дмитрий Петрович (мужской)' },
-    { id: 'ru_RU-denis-medium', label: 'Денис Александрович (мужской)' },
-    { id: 'ru_RU-ruslan-medium', label: 'Руслан Сергеевич (мужской)' },
+    { id: 'ru_RU-irina-medium', label: 'Ирина Владимировна' },
+    { id: 'ru_RU-dmitri-medium', label: 'Дмитрий Петрович' },
+    { id: 'ru_RU-denis-medium', label: 'Денис Александрович' },
+    { id: 'ru_RU-ruslan-medium', label: 'Руслан Сергеевич' },
   ],
   'en-US': [
-    { id: 'en_US-amy-medium', label: 'Эми Картер (female)' },
-    { id: 'en_US-ryan-medium', label: 'Райан Уитмор (male)' },
-    { id: 'en_US-lessac-medium', label: 'Грейс Холлоуэй (female)' },
+    { id: 'en_US-amy-medium', label: 'Эми Картер' },
+    { id: 'en_US-ryan-medium', label: 'Райан Уитмор' },
+    { id: 'en_US-lessac-medium', label: 'Грейс Холлоуэй' },
   ],
   'de-DE': [
-    { id: 'de_DE-thorsten-medium', label: 'Торстен Бергман (männlich)' },
-    { id: 'de_DE-mls-medium', label: 'Лукас Морелл (MLS)' },
+    { id: 'de_DE-thorsten-medium', label: 'Торстен Бергман' },
+    { id: 'de_DE-mls-medium', label: 'Лукас Морелл' },
   ],
   'es-ES': [
-    { id: 'es_ES-sharvard-medium', label: 'Кармен Видаль (femenino)' },
-    { id: 'es_ES-davefx-medium', label: 'Диего Феррер (masculino)' },
+    { id: 'es_ES-sharvard-medium', label: 'Кармен Видаль' },
+    { id: 'es_ES-davefx-medium', label: 'Диего Феррер' },
   ],
   'fr-FR': [
-    { id: 'fr_FR-siwis-medium', label: 'Селин Морено (féminin)' },
-    { id: 'fr_FR-tom-medium', label: 'Том Лефевр (masculin)' },
+    { id: 'fr_FR-siwis-medium', label: 'Селин Морено' },
+    { id: 'fr_FR-tom-medium', label: 'Том Лефевр' },
   ],
   'kk-KZ': [
-    { id: 'kk_KZ-issai-high', label: 'Айгерім Сатпаева (high, ~115 МБ)' },
-    { id: 'kk_KZ-raya-x_low', label: 'Рая Оразкызы (x_low)' },
+    { id: 'kk_KZ-issai-high', label: 'Айгерім Сатпаева' },
+    { id: 'kk_KZ-raya-x_low', label: 'Рая Оразкызы' },
   ],
 };
 
@@ -250,8 +250,12 @@ class PiperEngine {
         this.log('speak:play()', { rate });
         a.play().catch((err) => {
           this.log('speak:play() отклонён', { err: String(err) });
-          // автоплей-политика/ошибка — не блокируем диктовку
           if (gen !== this.generation) return;
+          // AbortError — наш же pause()/resume() прервал play(): предложение НЕ
+          // закончилось. onEnd сохраняем: после resume() аудио доиграет и сработает
+          // естественный onended. Другие ошибки (автоплей-политика и т.п.) —
+          // разблокируем цепочку, чтобы диктовка не зависла.
+          if ((err as { name?: string })?.name === 'AbortError') return;
           const cb = this.onEnd;
           this.onEnd = null;
           cb?.();
@@ -283,11 +287,19 @@ class PiperEngine {
   }
 
   resume() {
-    this.log('resume()', { readyState: this.audio?.readyState });
+    this.log('resume()', { readyState: this.audio?.readyState, ended: this.audio?.ended });
     this.paused = false;
-    if (this.audio && this.audio.readyState >= 2) {
+    // Перезапускать закончившееся аудио нельзя: <audio> начал бы предложение
+    // заново, а его колбэк окончания уже отработал — цепочка диктовки умерла бы.
+    // Продолжение в этом случае восстанавливает useDictation (pendingNext).
+    if (this.audio && this.audio.readyState >= 2 && !this.audio.ended) {
       this.audio.play().catch(() => {});
     }
+  }
+
+  /** Есть ли аудио, которое можно продолжить с места паузы (не дочитано до конца) */
+  hasResumableAudio(): boolean {
+    return !!this.audio && !this.audio.ended && this.audio.readyState >= 2;
   }
 }
 

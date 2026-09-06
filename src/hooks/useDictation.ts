@@ -30,6 +30,10 @@ export default function useDictation({
   const sentencesRef = useRef<string[]>([]);
   const randomOrderIndicesRef = useRef<number[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  // Отложенный шаг цепочки (следующий повтор / следующее предложение).
+  // Пауза отменяет таймер, но НЕ стирает шаг: resume() восстановит его,
+  // иначе при паузе «в интервале между предложениями» цепочка умрёт навсегда.
+  const pendingNextRef = useRef<(() => void) | null>(null);
   const isActiveRef = useRef<boolean>(false);
   const isPausedRef = useRef<boolean>(false);
   const isPlayingRef = useRef<boolean>(false);
@@ -60,6 +64,27 @@ export default function useDictation({
   useEffect(() => { speedRef.current = speed; }, [speed]);
   useEffect(() => { orderModeRef.current = orderMode; }, [orderMode]);
   useEffect(() => { voiceRef.current = voice; }, [voice]);
+
+  // Отложенное продолжение цепочки. fn сохраняется в pendingNextRef,
+  // чтобы pauseDictation мог остановить таймер, а resume — восстановить шаг.
+  const scheduleNext = useCallback((fn: () => void, delay: number) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    pendingNextRef.current = fn;
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      pendingNextRef.current = null;
+      fn();
+    }, delay);
+  }, []);
+
+  // Полная отмена продолжения (стоп / старт нового предложения)
+  const cancelChainTimers = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    pendingNextRef.current = null;
+  }, []);
 
   // Функция для перемешивания массива
   const shuffleArray = useCallback((array: number[]): number[] => {
@@ -116,10 +141,6 @@ export default function useDictation({
     const voice = voiceRef.current;
 
     if (!getSent || !doSpeak) return;
-
-    const scheduleNext = (fn: () => void, delay: number) => {
-      timerRef.current = setTimeout(fn, delay);
-    };
 
     if (reps === 1) {
       const nextIndex = index + 1;
@@ -211,10 +232,13 @@ export default function useDictation({
 
   useEffect(() => {
     ttsSpeakRawRef.current = ttsSpeak;
-    // Stop/Pause/Resume действуют на оба движка сразу — активен всегда максимум один
-    ttsStopRef.current = () => { piperEngine.stop(); ttsStop(); };
-    ttsPauseRef.current = () => { piperEngine.pause(); ttsPause(); };
-    ttsResumeRef.current = () => { piperEngine.resume(); ttsResume(); };
+    // Stop/Pause/Resume действуют на активный движок. Активен всегда максимум один:
+    // если озвучивает Piper, нативный TTS трогать нельзя — в частности,
+    // AndroidTTS.resume() безусловно начинает говорить и даст двойную озвучку.
+    const piperActive = () => piperEngine.isActive();
+    ttsStopRef.current = () => { piperEngine.stop(); if (!piperActive()) ttsStop(); };
+    ttsPauseRef.current = () => { piperEngine.pause(); if (!piperActive()) ttsPause(); };
+    ttsResumeRef.current = () => { piperEngine.resume(); if (!piperActive()) ttsResume(); };
   }, [ttsSpeak, ttsStop, ttsPause, ttsResume]);
 
   // Единая точка маршрутизации озвучки: Piper (нейро, офлайн) → системный TTS
@@ -242,7 +266,7 @@ export default function useDictation({
     currentSentenceRef.current = sentenceText;
     currentIndexRef.current = index;
     ttsStopRef.current?.();
-    if (timerRef.current) clearTimeout(timerRef.current);
+    cancelChainTimers();
     speakWithEnd(sentenceText, langRef.current, rate * speedRef.current);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -250,7 +274,7 @@ export default function useDictation({
   const startSentenceDictation = useCallback((sentenceIndex: number) => {
     if (sentenceIndex < 0 || sentenceIndex >= sentencesRef.current.length) return;
     if (orderModeRef.current === 'random') initializeRandomOrder();
-    if (timerRef.current) clearTimeout(timerRef.current);
+    cancelChainTimers();
     ttsStopRef.current?.();
     setIsPlaying(true);
     setIsPaused(false);
@@ -276,23 +300,60 @@ export default function useDictation({
       return;
     }
     if (isPlayingRef.current && !isPausedRef.current) {
+      // ПАУЗА: глушим движок и останавливаем таймер, но отложенный шаг цепочки
+      // (pendingNextRef) сохраняем — «Продолжить» восстановит его.
       ttsPauseRef.current?.();
-      if (timerRef.current) clearTimeout(timerRef.current);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      isPausedRef.current = true; // синхронно, не дожидаясь эффекта
       setIsPaused(true);
     } else if (isPausedRef.current) {
+      // ПРОДОЛЖИТЬ
+      isPausedRef.current = false;
       setIsPaused(false);
       isActiveRef.current = true;
       ttsResumeRef.current?.();
+
+      const pending = pendingNextRef.current;
+      const piperActive = piperEngine.isActive();
+      const androidBridge = typeof window !== 'undefined' && !!window.AndroidTTS;
+
+      if (pending && (piperActive || !androidBridge)) {
+        // Пауза пришлась на интервал между предложениями: таймер продолжения был
+        // остановлен — восстанавливаем его. Движки закончившееся аудио не
+        // перезапускают (Piper: resume() пропускает ended-аудио; Web Speech:
+        // resume() — no-op), так что двойного старта не будет.
+        pendingNextRef.current = null;
+        scheduleNext(pending, Math.max(pauseDurationRef.current, 300));
+      } else if (!pending) {
+        // Пауза пришлась посреди предложения — движок продолжит аудио сам после
+        // resume(). Если же возобновлять нечего (пауза попала на стык до старта
+        // озвучки), перезапускаем текущее предложение, чтобы цепочка не умерла.
+        const webSpeechMid = typeof window !== 'undefined'
+          && 'speechSynthesis' in window
+          && window.speechSynthesis.paused;
+        const nothingToResume = piperActive
+          ? !piperEngine.hasResumableAudio()
+          : androidBridge
+            ? false // нативный resume() сам перезапускает предложение и вернёт onDone
+            : !webSpeechMid;
+        if (nothingToResume) {
+          currentStepRef.current = 0;
+          ttsSpeakRef.current?.(currentSentenceRef.current, langRef.current, 1 * speedRef.current, voiceRef.current);
+        }
+      }
     }
-  }, [startDictation]);
+  }, [startDictation, scheduleNext]);
 
   const stopDictation = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
+    cancelChainTimers();
     ttsStopRef.current?.();
     setIsPlaying(false);
     setIsPaused(false);
     isActiveRef.current = false;
-  }, []);
+  }, [cancelChainTimers]);
 
   const goToNextSentence = useCallback(() => {
     const nextIndex = currentSentenceIndex + 1;
