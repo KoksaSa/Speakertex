@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import useNativeTTS from './useNativeTTS';
 import { splitIntoSentences, compareTexts } from '../utils/textUtils';
+import { piperEngine } from '../utils/piperEngine';
 
 interface UseDictationProps {
   text: string;
@@ -205,32 +206,34 @@ export default function useDictation({
   // Используем нативный TTS — передаём handleUtteranceEnd для цепочки
   const { speak: ttsSpeak, stop: ttsStop, pause: ttsPause, resume: ttsResume } = useNativeTTS(handleUtteranceEnd);
 
+  // «Сырые» функции системного TTS (Android-мост / Web Speech API)
+  const ttsSpeakRawRef = useRef<((text: string, l: string, r: number, v?: SpeechSynthesisVoice | null) => void) | null>(null);
+
   useEffect(() => {
-    ttsSpeakRef.current = ttsSpeak;
-    ttsStopRef.current = ttsStop;
-    ttsPauseRef.current = ttsPause;
-    ttsResumeRef.current = ttsResume;
+    ttsSpeakRawRef.current = ttsSpeak;
+    // Stop/Pause/Resume действуют на оба движка сразу — активен всегда максимум один
+    ttsStopRef.current = () => { piperEngine.stop(); ttsStop(); };
+    ttsPauseRef.current = () => { piperEngine.pause(); ttsPause(); };
+    ttsResumeRef.current = () => { piperEngine.resume(); ttsResume(); };
   }, [ttsSpeak, ttsStop, ttsPause, ttsResume]);
+
+  // Единая точка маршрутизации озвучки: Piper (нейро, офлайн) → системный TTS
+  const routeSpeak = useCallback((text: string, l: string, r: number, v?: SpeechSynthesisVoice | null) => {
+    if (piperEngine.isActive()) {
+      piperEngine.speak(text, r, () => handleUtteranceEnd());
+      return;
+    }
+    ttsSpeakRawRef.current?.(text, l, r, v ?? voiceRef.current);
+  }, [handleUtteranceEnd]);
+
+  useEffect(() => {
+    ttsSpeakRef.current = routeSpeak;
+  }, [routeSpeak]);
 
   // Озвучивание через speakWithEnd (для первого предложения и startSentenceDictation)
   const speakWithEnd = useCallback((sentenceText: string, l: string, r: number, v?: SpeechSynthesisVoice | null) => {
-    if (!('speechSynthesis' in window)) {
-      ttsSpeakRef.current?.(sentenceText, l, r);
-      return;
-    }
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(sentenceText);
-    utterance.lang = l;
-    utterance.rate = r;
-    const voiceToUse = v !== undefined ? v : voiceRef.current;
-    if (voiceToUse) {
-      utterance.voice = voiceToUse;
-    }
-    utterance.onend = () => { handleUtteranceEnd(); };
-    utterance.onerror = () => { handleUtteranceEnd(); };
-    window.speechSynthesis.speak(utterance);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    routeSpeak(sentenceText, l, r, v);
+  }, [routeSpeak]);
 
   // Функция озвучивания
   const speak = useCallback((sentenceText: string, rate: number = 1, step: number, index: number) => {

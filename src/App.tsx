@@ -5,6 +5,8 @@ import ResultDisplay from './components/ResultDisplay';
 import CountdownOverlay from './components/CountdownOverlay';
 import MyTextsModal from './components/MyTextsModal';
 import useDictation from './hooks/useDictation';
+import { usePiperTTS } from './hooks/usePiperTTS';
+import PiperVoiceSettings from './components/PiperVoiceSettings';
 import HelpPage from './components/HelpPage';
 import { dictationTextsSimple, Language, Difficulty } from './utils/dictationTextsSimple';
 import { splitIntoSentences } from './utils/textUtils';
@@ -84,6 +86,7 @@ const App: React.FC = () => {
   const [isTrainingMode, setIsTrainingMode] = useState(savedState.isTrainingMode || false);
   const [selectedVoiceIndex, setSelectedVoiceIndex] = useState(0);
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const piper = usePiperTTS();
 
   const {
     isPlaying,
@@ -279,6 +282,18 @@ const App: React.FC = () => {
       helpButton: 'Справка',
       myTextsButton: 'Мои тексты',
       voiceLabel: 'Голос',
+      voiceEngineLabel: 'Голосовой движок',
+      voiceSystem: 'Системный голос',
+      voicePiper: 'Нейроголос (офлайн)',
+      piperDownload: 'Скачать голос (~63 МБ)',
+      piperDownloading: 'Скачивание…',
+      piperWarming: 'Подготовка движка…',
+      piperReady: 'Голос готов',
+      piperTest: 'Проверить голос',
+      piperTestText: 'Проверка голоса. Ребята с увлечением раздувают первые искры огоньков.',
+      piperUnsupported: 'Нейроголос здесь недоступен. Откройте приложение на сайте (https) — и он заработает.',
+      piperError: 'Ошибка загрузки голоса',
+      piperNote: 'После первой загрузки работает без интернета. Ударения и звучание заметно лучше системного голоса.',
     },
     'en-US': {
       title: '🎙️ Dictation App',
@@ -337,6 +352,18 @@ const App: React.FC = () => {
       helpButton: 'Help',
       myTextsButton: 'My Texts',
       voiceLabel: 'Voice',
+      voiceEngineLabel: 'Voice engine',
+      voiceSystem: 'System voice',
+      voicePiper: 'Neural voice (offline)',
+      piperDownload: 'Download voice (~63 MB)',
+      piperDownloading: 'Downloading…',
+      piperWarming: 'Preparing engine…',
+      piperReady: 'Voice ready',
+      piperTest: 'Test voice',
+      piperTestText: 'Voice test. The weather is warm and sunny today.',
+      piperUnsupported: 'The neural voice is unavailable here. Open the app on the website (https) and it will work.',
+      piperError: 'Voice download failed',
+      piperNote: 'Works offline after the first download. Pronunciation and stress are much better than the system voice.',
       helpCloseButton: 'Close',
       orderModeLabel: 'Dictation order:',
       orderSequential: 'Sequential order',
@@ -422,6 +449,18 @@ const App: React.FC = () => {
       helpButton: 'Ayuda',
       myTextsButton: 'Mis Textos',
       voiceLabel: 'Voz',
+      voiceEngineLabel: 'Motor de voz',
+      voiceSystem: 'Voz del sistema',
+      voicePiper: 'Voz neuronal (sin conexión)',
+      piperDownload: 'Descargar voz (~63 MB)',
+      piperDownloading: 'Descargando…',
+      piperWarming: 'Preparando el motor…',
+      piperReady: 'Voz lista',
+      piperTest: 'Probar voz',
+      piperTestText: 'Prueba de voz. Hoy el clima está cálido y soleado.',
+      piperUnsupported: 'La voz neuronal no está disponible aquí. Abre la aplicación en el sitio web (https).',
+      piperError: 'Error al descargar la voz',
+      piperNote: 'Funciona sin conexión tras la primera descarga. La pronunciación y los acentos son mejores que los de la voz del sistema.',
       helpCloseButton: 'Cerrar',
     },
     'fr-FR': {
@@ -494,6 +533,18 @@ const App: React.FC = () => {
       helpButton: 'Aide',
       myTextsButton: 'Mes Textes',
       voiceLabel: 'Voix',
+      voiceEngineLabel: 'Moteur de voix',
+      voiceSystem: 'Voix du système',
+      voicePiper: 'Voix neuronale (hors ligne)',
+      piperDownload: 'Télécharger la voix (~63 Mo)',
+      piperDownloading: 'Téléchargement…',
+      piperWarming: 'Préparation du moteur…',
+      piperReady: 'Voix prête',
+      piperTest: 'Tester la voix',
+      piperTestText: 'Test de la voix. Le temps est chaud et ensoleillé aujourd’hui.',
+      piperUnsupported: 'La voix neuronale n’est pas disponible ici. Ouvrez l’application sur le site (https).',
+      piperError: 'Erreur de téléchargement de la voix',
+      piperNote: 'Fonctionne hors ligne après le premier téléchargement. La prononciation et les accents sont bien meilleurs qu’avec la voix du système.',
       helpCloseButton: 'Fermer',
     },
     'de-DE': {
@@ -566,6 +617,18 @@ const App: React.FC = () => {
       helpButton: 'Hilfe',
       myTextsButton: 'Meine Texte',
       voiceLabel: 'Stimme',
+      voiceEngineLabel: 'Stimm-Engine',
+      voiceSystem: 'Systemstimme',
+      voicePiper: 'Neurostimme (offline)',
+      piperDownload: 'Stimme herunterladen (~63 MB)',
+      piperDownloading: 'Wird heruntergeladen…',
+      piperWarming: 'Engine wird vorbereitet…',
+      piperReady: 'Stimme bereit',
+      piperTest: 'Stimme testen',
+      piperTestText: 'Stimmtest. Das Wetter ist heute warm und sonnig.',
+      piperUnsupported: 'Die Neurostimme ist hier nicht verfügbar. Öffne die App auf der Website (https).',
+      piperError: 'Fehler beim Laden der Stimme',
+      piperNote: 'Funktioniert nach dem ersten Download offline. Aussprache und Betonung sind viel besser als bei der Systemstimme.',
       helpCloseButton: 'Schließen',
     },
     'kk-KZ': {
@@ -638,6 +701,18 @@ const App: React.FC = () => {
       helpButton: 'Анықтама',
       myTextsButton: 'Менің мәтіндерім',
       voiceLabel: 'Дауыс',
+      voiceEngineLabel: 'Дауыс движогі',
+      voiceSystem: 'Жүйелік дауыс',
+      voicePiper: 'Нейродауыс (офлайн)',
+      piperDownload: 'Дауысты жүктеп алу (~63 МБ)',
+      piperDownloading: 'Жүктелуде…',
+      piperWarming: 'Движок дайындалуда…',
+      piperReady: 'Дауыс дайын',
+      piperTest: 'Дауысты тексеру',
+      piperTestText: 'Дауысты тексеру. Бүгін ауа-райы жылы және күн ашық.',
+      piperUnsupported: 'Нейродауыс мұнда қолжетімсіз. Қосымшаны сайтта (https) ашыңыз.',
+      piperError: 'Дауысты жүктеу қатесі',
+      piperNote: 'Бірінші жүктеп алғаннан кейін интернетсіз жұмыс істейді. Айтылымы жүйелік дауыстан әлдеқайда жақсы.',
       helpCloseButton: 'Жабу',
     },
   };
@@ -1067,8 +1142,11 @@ const App: React.FC = () => {
         />
       </div>
 
-      {/* Выбор голоса TTS */}
-      {availableVoices.length > 0 && (
+      {/* Голосовой движок: системный / Piper (офлайн) */}
+      <PiperVoiceSettings isDark={isDark} lang={selectedLang} testText={t('piperTestText')} t={t} />
+
+      {/* Выбор системного голоса TTS (скрыт, когда активен Piper) */}
+      {availableVoices.length > 0 && !piper.enabled && (
         <div className="mb-6">
           <label className="block mb-2 font-medium">🎤 {t('voiceLabel')}</label>
           <select
