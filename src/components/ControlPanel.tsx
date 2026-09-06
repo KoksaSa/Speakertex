@@ -61,7 +61,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           }`}
           title={t('startButton')}
         >
-          ▶️
+          🎙️
         </button>
         <button
           onClick={onPause}
@@ -78,14 +78,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           className="w-16 h-16 rounded-full bg-gray-500 hover:bg-gray-600 text-white flex items-center justify-center text-xl font-medium transition-all duration-200"
           title={t('prevSentenceButton')}
         >
-          ◀️
+          ⏮️
         </button>
         <button
           onClick={onGoToNextSentence}
           className="w-16 h-16 rounded-full bg-gray-500 hover:bg-gray-600 text-white flex items-center justify-center text-xl font-medium transition-all duration-200"
           title={t('nextSentenceButton')}
         >
-          ▶️
+          ⏭️
         </button>
         <button
           onClick={onStop}
