@@ -35,6 +35,11 @@ export default function useDictation({
   // иначе при паузе «в интервале между предложениями» цепочка умрёт навсегда.
   const pendingNextRef = useRef<(() => void) | null>(null);
   const isActiveRef = useRef<boolean>(false);
+  // Какой движок озвучивает ТЕКУЩУЮ фразу (запоминается в момент speak).
+  // Нельзя спрашивать piperEngine.isActive() в момент паузы/продолжения: Piper
+  // мог доготовиться/отвалиться посреди диктовки — тогда resume уйдёт не туда
+  // и цепочка зависнет.
+  const activeEngineRef = useRef<'piper' | 'native' | null>(null);
   const isPausedRef = useRef<boolean>(false);
   const isPlayingRef = useRef<boolean>(false);
   const currentStepRef = useRef<number>(0);
@@ -232,21 +237,22 @@ export default function useDictation({
 
   useEffect(() => {
     ttsSpeakRawRef.current = ttsSpeak;
-    // Stop/Pause/Resume действуют на активный движок. Активен всегда максимум один:
-    // если озвучивает Piper, нативный TTS трогать нельзя — в частности,
-    // AndroidTTS.resume() безусловно начинает говорить и даст двойную озвучку.
-    const piperActive = () => piperEngine.isActive();
-    ttsStopRef.current = () => { piperEngine.stop(); if (!piperActive()) ttsStop(); };
-    ttsPauseRef.current = () => { piperEngine.pause(); if (!piperActive()) ttsPause(); };
-    ttsResumeRef.current = () => { piperEngine.resume(); if (!piperActive()) ttsResume(); };
+    // Stop/Pause/Resume действуют на движок, который ЗВУЧИТ (activeEngineRef),
+    // а не на «кто готов сейчас». В частности, нативный AndroidTTS.resume()
+    // безусловно начинает говорить — его нельзя дёргать при активном Piper.
+    ttsStopRef.current = () => { piperEngine.stop(); if (activeEngineRef.current === 'native') ttsStop(); };
+    ttsPauseRef.current = () => { piperEngine.pause(); if (activeEngineRef.current === 'native') ttsPause(); };
+    ttsResumeRef.current = () => { piperEngine.resume(); if (activeEngineRef.current === 'native') ttsResume(); };
   }, [ttsSpeak, ttsStop, ttsPause, ttsResume]);
 
   // Единая точка маршрутизации озвучки: Piper (нейро, офлайн) → системный TTS
   const routeSpeak = useCallback((text: string, l: string, r: number, v?: SpeechSynthesisVoice | null) => {
     if (piperEngine.isActive()) {
+      activeEngineRef.current = 'piper';
       piperEngine.speak(text, r, () => handleUtteranceEnd());
       return;
     }
+    activeEngineRef.current = 'native';
     ttsSpeakRawRef.current?.(text, l, r, v ?? voiceRef.current);
   }, [handleUtteranceEnd]);
 
@@ -314,32 +320,37 @@ export default function useDictation({
       isPausedRef.current = false;
       setIsPaused(false);
       isActiveRef.current = true;
-      ttsResumeRef.current?.();
 
       const pending = pendingNextRef.current;
-      const piperActive = piperEngine.isActive();
+      const engine = activeEngineRef.current; // чем звучало текущее предложение
       const androidBridge = typeof window !== 'undefined' && !!window.AndroidTTS;
 
-      if (pending && (piperActive || !androidBridge)) {
-        // Пауза пришлась на интервал между предложениями: таймер продолжения был
-        // остановлен — восстанавливаем его. Движки закончившееся аудио не
-        // перезапускают (Piper: resume() пропускает ended-аудио; Web Speech:
-        // resume() — no-op), так что двойного старта не будет.
+      // 1) Движок продолжает своё (см. ttsResumeRef: Piper — недочитанное
+      //    аудио, закончившееся не перезапускает; Web Speech — снимает паузу
+      //    фразы; Android — перечитывает предложение с последней позиции).
+      ttsResumeRef.current?.();
+
+      if (pending && !(engine === 'native' && androidBridge)) {
+        // 2) Пауза пришлась на интервал между предложениями: отложенный шаг
+        //    цепочки восстанавливаем. Для Android-моста НЕ восстанавливаем —
+        //    его resume() сам перечитает предложение и вернёт onDone,
+        //    иначе будет двойной переход.
         pendingNextRef.current = null;
         scheduleNext(pending, Math.max(pauseDurationRef.current, 300));
       } else if (!pending) {
-        // Пауза пришлась посреди предложения — движок продолжит аудио сам после
-        // resume(). Если же возобновлять нечего (пауза попала на стык до старта
-        // озвучки), перезапускаем текущее предложение, чтобы цепочка не умерла.
-        const webSpeechMid = typeof window !== 'undefined'
+        // 3) Самовосстановление — только если продолжать НЕЧЕГО вовсе
+        //    (пауза попала на стык до старта озвучки). Если что-то из
+        //    перечисленного активнo — оно само доиграет и вернёт onend/onDone.
+        const piperBusy = piperEngine.hasResumableAudio() || piperEngine.isSynthesizing();
+        const webSpeechBusy = typeof window !== 'undefined'
           && 'speechSynthesis' in window
-          && window.speechSynthesis.paused;
-        const nothingToResume = piperActive
-          ? !piperEngine.hasResumableAudio()
-          : androidBridge
-            ? false // нативный resume() сам перезапускает предложение и вернёт onDone
-            : !webSpeechMid;
-        if (nothingToResume) {
+          && (window.speechSynthesis.speaking || window.speechSynthesis.pending || window.speechSynthesis.paused);
+        const engineBusy = engine === 'piper'
+          ? piperBusy
+          : engine === 'native'
+            ? webSpeechBusy
+            : false; // ничего не звучало — честный рестарт текущего предложения
+        if (!engineBusy) {
           currentStepRef.current = 0;
           ttsSpeakRef.current?.(currentSentenceRef.current, langRef.current, 1 * speedRef.current, voiceRef.current);
         }

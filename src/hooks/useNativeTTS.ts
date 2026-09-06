@@ -26,6 +26,11 @@ interface UseNativeTTSResult {
 export default function useNativeTTS(onEnd?: () => void): UseNativeTTSResult {
   const [isReady, setIsReady] = useState(false);
   const onEndRef = useRef(onEnd);
+  // Маркер эпохи фразы: cancel()/замена фразы инвалидирует колбэки предыдущей.
+  // Без этого cancel() в Chrome вызывает onend у УБИТОЙ фразы → цепочка
+  // диктовки получала ложное «предложение закончилось» и улетала вперёд
+  // (симптом: после паузы предложения «быстро перескакивают»).
+  const utteranceTokenRef = useRef(0);
 
   // Обновляем ref при изменении колбэка
   useEffect(() => {
@@ -61,8 +66,14 @@ export default function useNativeTTS(onEnd?: () => void): UseNativeTTSResult {
     if (window.AndroidTTS) {
       window.AndroidTTS.speak(text, lang, rate);
     } else if ('speechSynthesis' in window) {
-      // Фолбэк на Web Speech API для браузера
-      window.speechSynthesis.cancel();
+      const synth = window.speechSynthesis;
+      synth.cancel();
+      // «Залипшая» пауза: Chrome, получив pause() при пустой очереди, держит
+      // paused=true, и следующая фраза молча застревает в очереди («тишина
+      // после продолжить»). Явно снимаем паузу перед новой фразой.
+      if (synth.paused) synth.resume();
+
+      const myToken = ++utteranceTokenRef.current;
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = lang;
       utterance.rate = rate;
@@ -70,16 +81,16 @@ export default function useNativeTTS(onEnd?: () => void): UseNativeTTSResult {
         utterance.voice = voice;
       }
 
-      // Колбэк при окончании озвучки
+      // Колбэки окончания — только если фраза всё ещё актуальна
       utterance.onend = () => {
-        onEndRef.current?.();
+        if (utteranceTokenRef.current === myToken) onEndRef.current?.();
       };
 
       utterance.onerror = () => {
-        onEndRef.current?.();
+        if (utteranceTokenRef.current === myToken) onEndRef.current?.();
       };
 
-      window.speechSynthesis.speak(utterance);
+      synth.speak(utterance);
     }
   }, []);
 
@@ -87,6 +98,9 @@ export default function useNativeTTS(onEnd?: () => void): UseNativeTTSResult {
     if (window.AndroidTTS) {
       window.AndroidTTS.stop();
     } else if ('speechSynthesis' in window) {
+      // Инвалидируем колбэки ДО cancel(): onend/onerror отменённой фразы
+      // не должны вернуться в цепочку диктовки
+      utteranceTokenRef.current++;
       window.speechSynthesis.cancel();
     }
   }, []);

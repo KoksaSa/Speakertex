@@ -135,6 +135,19 @@ const App: React.FC = () => {
     setCountdown(0);
   };
 
+  // ⏮️/⏭️ во время отсчёта: иначе по завершении отсчёта startDictation()
+  // запустит ВТОРУЮ цепочку параллельно с этой — предложения начнут
+  // «перескакивать» и заговаривать друг друга.
+  const handleGoToPreviousSentence = () => {
+    cancelCountdown();
+    goToPreviousSentence();
+  };
+
+  const handleGoToNextSentence = () => {
+    cancelCountdown();
+    goToNextSentence();
+  };
+
   // Применяем тему при изменении
   useEffect(() => {
     document.documentElement.classList.toggle('dark-theme', isDark);
@@ -1206,8 +1219,8 @@ const App: React.FC = () => {
           onCheck={handleCheck}
           onShowText={handleShowText}
           onToggleTrainingMode={handleToggleTrainingMode}
-          onGoToPreviousSentence={goToPreviousSentence}
-          onGoToNextSentence={goToNextSentence}
+          onGoToPreviousSentence={handleGoToPreviousSentence}
+          onGoToNextSentence={handleGoToNextSentence}
           t={t}
         />
       </div>

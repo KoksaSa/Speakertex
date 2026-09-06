@@ -69,6 +69,7 @@ class PiperEngine {
   private generation = 0; // токен отмены: синтез, начатый ранее, игнорируется
   private onEnd: (() => void) | null = null;
   private paused = false;
+  private synthesizing = false; // предикт в полёте — звук появится без нашего участия
 
   private listeners = new Set<() => void>();
   private snapshot: PiperSnapshot;
@@ -218,9 +219,11 @@ class PiperEngine {
     const gen = ++this.generation;
     this.onEnd = onEnd ?? null;
     this.paused = false;
+    this.synthesizing = true;
 
     tts.predict({ text, voiceId: this.voiceId })
       .then((wav) => {
+        this.synthesizing = false;
         if (gen !== this.generation) return; // остановлено/заменено во время синтеза
 
         if (this.audioUrl) URL.revokeObjectURL(this.audioUrl);
@@ -262,6 +265,7 @@ class PiperEngine {
         });
       })
       .catch(() => {
+        this.synthesizing = false;
         if (gen !== this.generation) return;
         const cb = this.onEnd;
         this.onEnd = null;
@@ -274,6 +278,7 @@ class PiperEngine {
     this.generation++;
     this.onEnd = null;
     this.paused = false;
+    this.synthesizing = false;
     if (this.audio) {
       this.audio.pause();
       try { this.audio.currentTime = 0; } catch {}
@@ -300,6 +305,11 @@ class PiperEngine {
   /** Есть ли аудио, которое можно продолжить с места паузы (не дочитано до конца) */
   hasResumableAudio(): boolean {
     return !!this.audio && !this.audio.ended && this.audio.readyState >= 2;
+  }
+
+  /** Синтез предложения ещё идёт — после него звук начнёт играть сам */
+  isSynthesizing(): boolean {
+    return this.synthesizing;
   }
 }
 
