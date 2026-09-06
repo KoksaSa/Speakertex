@@ -29,9 +29,10 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, t, onCorrection }
       
       <p><strong>{t('correctnessLabel')}:</strong> {result.correct}</p>
       <p><strong>{t('errorsLabel')}:</strong> {result.errors}</p>
-      {result.cpm && (
+      {/* Скорость печати — только если успели замерить (иначе React напечатал бы «0») */}
+      {result.cpm ? (
         <p><strong>{t('typingSpeedLabel')}:</strong> {result.cpm} {t('cpmLabel')}</p>
-      )}
+      ) : null}
 
       {/* Показываем только слова с ошибками */}
       {errorWordsOnly.length > 0 && (
@@ -41,7 +42,8 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, t, onCorrection }
             {errorWordsOnly.map((word, index) => (
               <li key={index}>
                 <span className="text-red-600">
-                  {word.original} → {word.user}
+                  {/* «—» вместо пустой стороны: лишнее слово (нет в оригинале) или пропуск (не напечатано) */}
+                  {word.original || '—'} → {word.user || '—'}
                 </span>
               </li>
             ))}

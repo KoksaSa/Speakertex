@@ -17,34 +17,35 @@ export interface PiperSnapshot {
   error: string | null;
 }
 
-/** Голоса Piper по языкам диктовки приложения (ключи = selectedLang) */
+/** Голоса Piper по языкам диктовки приложения (ключи = selectedLang).
+ *  label — «человеческое» имя диктора (имя + отчество/фамилия) + пол и размер модели. */
 export const PIPER_VOICES: Record<string, Array<{ id: tts.VoiceId; label: string }>> = {
   'ru-RU': [
-    { id: 'ru_RU-irina-medium', label: 'Ирина (женский)' },
-    { id: 'ru_RU-dmitri-medium', label: 'Дмитрий (мужской)' },
-    { id: 'ru_RU-denis-medium', label: 'Денис (мужской)' },
-    { id: 'ru_RU-ruslan-medium', label: 'Руслан (мужской)' },
+    { id: 'ru_RU-irina-medium', label: 'Ирина Владимировна (женский)' },
+    { id: 'ru_RU-dmitri-medium', label: 'Дмитрий Петрович (мужской)' },
+    { id: 'ru_RU-denis-medium', label: 'Денис Александрович (мужской)' },
+    { id: 'ru_RU-ruslan-medium', label: 'Руслан Сергеевич (мужской)' },
   ],
   'en-US': [
-    { id: 'en_US-amy-medium', label: 'Amy (female)' },
-    { id: 'en_US-ryan-medium', label: 'Ryan (male)' },
-    { id: 'en_US-lessac-medium', label: 'Lessac (female)' },
+    { id: 'en_US-amy-medium', label: 'Эми Картер (female)' },
+    { id: 'en_US-ryan-medium', label: 'Райан Уитмор (male)' },
+    { id: 'en_US-lessac-medium', label: 'Грейс Холлоуэй (female)' },
   ],
   'de-DE': [
-    { id: 'de_DE-thorsten-medium', label: 'Thorsten (männlich)' },
-    { id: 'de_DE-mls-medium', label: 'MLS' },
+    { id: 'de_DE-thorsten-medium', label: 'Торстен Бергман (männlich)' },
+    { id: 'de_DE-mls-medium', label: 'Лукас Морелл (MLS)' },
   ],
   'es-ES': [
-    { id: 'es_ES-sharvard-medium', label: 'Sharvard (femenino)' },
-    { id: 'es_ES-davefx-medium', label: 'Davefx (masculino)' },
+    { id: 'es_ES-sharvard-medium', label: 'Кармен Видаль (femenino)' },
+    { id: 'es_ES-davefx-medium', label: 'Диего Феррер (masculino)' },
   ],
   'fr-FR': [
-    { id: 'fr_FR-siwis-medium', label: 'Siwis (féminin)' },
-    { id: 'fr_FR-tom-medium', label: 'Tom (masculin)' },
+    { id: 'fr_FR-siwis-medium', label: 'Селин Морено (féminin)' },
+    { id: 'fr_FR-tom-medium', label: 'Том Лефевр (masculin)' },
   ],
   'kk-KZ': [
-    { id: 'kk_KZ-issai-high', label: 'ISSAI (high, ~115 МБ)' },
-    { id: 'kk_KZ-raya-x_low', label: 'Рая (x_low)' },
+    { id: 'kk_KZ-issai-high', label: 'Айгерім Сатпаева (high, ~115 МБ)' },
+    { id: 'kk_KZ-raya-x_low', label: 'Рая Оразкызы (x_low)' },
   ],
 };
 
