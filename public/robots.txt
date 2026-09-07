@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://koksasa.github.io/Speakertex/sitemap.xml

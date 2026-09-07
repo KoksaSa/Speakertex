@@ -2,32 +2,77 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Основные Open Graph теги -->
-    <meta property="og:title" content="speaktex — Dictation App" />
-    <meta property="og:description" content="Boost your learning & productivity: dictate text, check spelling, improve typing speed, memorize info, and practice foreign languages with voice input!" />
+    <!-- SEO: основные метатеги -->
+    <title>Speakertex — приложение-диктант: печать под диктовку онлайн</title>
+    <meta name="description" content="Бесплатный онлайн-диктант Speakertex: приложение читает текст вслух, вы печатаете под диктовку. Проверка орфографии и пунктуации, скорость печати, режим тренировки, свои тексты, 6 языков — русский, английский, испанский, французский, немецкий, казахский." />
+    <meta name="keywords" content="диктант онлайн, печать под диктовку, диктовка текста, тренажёр печати, скорость печати, слепая печать, проверка орфографии, изучение языков, диктант по русскому языку" />
+    <link rel="canonical" href="https://koksasa.github.io/Speakertex/" />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="Speakertex" />
+
+    <!-- Цвет интерфейса браузера (светлая/тёмная схема) -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#111827" />
+
+    <!-- Open Graph (Telegram, VK, WhatsApp, Facebook) -->
+    <meta property="og:title" content="Speakertex — приложение-диктант" />
+    <meta property="og:description" content="Печатай под диктовку: приложение читает текст вслух, ты печатаешь и сразу проверяешь себя. Орфография, скорость печати, режим тренировки, 6 языков." />
     <meta property="og:image" content="https://koksasa.github.io/Speakertex/preview.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Speakertex — приложение-диктант: белый микрофон на синем фоне" />
     <meta property="og:url" content="https://koksasa.github.io/Speakertex/" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="speaktex" />
+    <meta property="og:site_name" content="Speakertex" />
+    <meta property="og:locale" content="ru_RU" />
+    <meta property="og:locale:alternate" content="en_US" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="speaktex — Dictation App" />
-    <meta name="twitter:description" content="Boost your learning & productivity: dictate text, check spelling, improve typing speed, memorize info, and practice foreign languages with voice input!" />
+    <meta name="twitter:title" content="Speakertex — приложение-диктант" />
+    <meta name="twitter:description" content="Печатай под диктовку: приложение читает текст вслух, ты печатаешь и сразу проверяешь себя. Орфография, скорость печати, 6 языков." />
     <meta name="twitter:image" content="https://koksasa.github.io/Speakertex/preview.jpg" />
+    <meta name="twitter:image:alt" content="Speakertex — приложение-диктант" />
 
-    <!-- Дополнительные -->
-    <meta name="description" content="Boost your learning & productivity: dictate text, check spelling, improve typing speed, memorize info, and practice foreign languages with voice input!" />
-    <title>speaktex — Dictation App</title>
-
-    <!-- Иконки -->
-    <link rel="icon" type="image/x-icon" href="./favicon.ico" />
+    <!-- PWA и иконки -->
+    <link rel="manifest" href="./site.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png" />
-    <link rel="icon" type="image/png" href="./logo.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png" />
+    <link rel="shortcut icon" href="./favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+
+    <!-- Структурированные данные для поисковых систем -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Speakertex",
+      "alternateName": "Speakertex Dictation App",
+      "url": "https://koksasa.github.io/Speakertex/",
+      "description": "Онлайн-диктант: приложение читает текст вслух, вы печатаете под диктовку. Проверка орфографии и пунктуации, скорость печати, тренировочный режим.",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Any",
+      "browserRequirements": "Requires JavaScript",
+      "isAccessibleForFree": true,
+      "inLanguage": ["ru", "en", "es", "fr", "de", "kk"],
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "RUB" },
+      "featureList": [
+        "Диктовка текстов вслух (синтез речи)",
+        "Проверка орфографии и пунктуации",
+        "Скорость печати в знаках в минуту",
+        "Режим тренировки с подсветкой ошибок",
+        "Собственные тексты пользователя",
+        "Офлайн-Android-приложение"
+      ],
+      "screenshot": "https://koksasa.github.io/Speakertex/preview.jpg"
+    }
+    </script>
 
     <!-- Yandex.Metrika counter -->
+    <link rel="preconnect" href="https://mc.yandex.ru" crossorigin />
     <script type="text/javascript">
         (function(m,e,t,r,i,k,a){
             m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
@@ -45,8 +90,8 @@
     <div id="root">
         <div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;padding:20px;text-align:center;">
             <div>
-                <h1>🎙️ speaktex</h1>
-                <p>Loading...</p>
+                <h1>🎙️ Speakertex</h1>
+                <p>Загрузка...</p>
                 <p style="color:#888;font-size:12px;">If you see this for more than 10 seconds, your device may not support this app.</p>
             </div>
         </div>
