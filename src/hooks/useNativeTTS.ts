@@ -21,6 +21,8 @@ interface UseNativeTTSResult {
   stop: () => void;
   pause: () => void;
   resume: () => void;
+  /** Разблокировка синтеза речи внутри жеста пользователя (обязательно для iOS Safari) */
+  unlock: () => void;
 }
 
 export default function useNativeTTS(onEnd?: () => void): UseNativeTTSResult {
@@ -121,11 +123,32 @@ export default function useNativeTTS(onEnd?: () => void): UseNativeTTSResult {
     }
   }, []);
 
+  /**
+   * iOS Safari разрешает speechSynthesis.speak() только в стеке жеста
+   * пользователя. Диктовка стартует через отсчёт 3-2-1 — первая фраза
+   * звучит ~3 секунды ПОСЛЕ тапа, и на iPhone движок молча блокирует
+   * воспроизведение. Лечится «тихой» фразой, произносимой синхронно
+   * в обработчике нажатия: она ничего не звучит, но разблокирует движок
+   * на всю сессию (стандартный workaround для iOS).
+   */
+  const unlock = useCallback(() => {
+    if (window.AndroidTTS || !('speechSynthesis' in window)) return;
+    try {
+      const u = new SpeechSynthesisUtterance(' ');
+      u.volume = 0;
+      u.rate = 2;
+      window.speechSynthesis.speak(u);
+    } catch {
+      /* ничего — разблокировка не критична для десктопа/Android */
+    }
+  }, []);
+
   return {
     isReady,
     speak,
     stop,
     pause,
     resume,
+    unlock,
   };
 }

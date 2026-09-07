@@ -98,7 +98,8 @@ const App: React.FC = () => {
     stopDictation,
     goToNextSentence,
     goToPreviousSentence,
-    checkResults
+    checkResults,
+    unlockTTS
   } = useDictation({
     text: originalText,
     lang: selectedLang,
@@ -775,6 +776,10 @@ const App: React.FC = () => {
     stopClickCountRef.current = 0;
     lastStopTimeRef.current = 0;
 
+    // iOS Safari: разблокируем синтез речи синхронно в жесте — первая фраза
+    // прозвучит через отсчёт 3-2-1, и без этого iPhone молча её заблокирует
+    unlockTTS();
+
     // Отменяем предыдущий отсчёт, если был
     cancelCountdown();
 
@@ -902,7 +907,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className={`container mx-auto px-4 py-8 max-w-6xl pb-24 transition-colors duration-200 ${dk(isDark, 'bg-white text-gray-800', 'bg-gray-900 text-gray-200')}`}>
+    <div className={`container mx-auto px-4 py-8 max-w-6xl pb-44 transition-colors duration-200 ${dk(isDark, 'bg-white text-gray-800', 'bg-gray-900 text-gray-200')}`}>
       {/* Заголовок и флаги */}
       <div className="mb-4 text-center">
         {/* ✅ Единственный кликабельный заголовок */}
@@ -1207,9 +1212,13 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Панель управления — прилипает к правому краю */}
-      <div className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-white shadow-lg p-4 z-50 border-l border-gray-200 rounded-l-lg">
-        <ControlPanel
+      {/* Панель управления — док внизу экрана; во время воспроизведения сжимается до пауза/навигация/стоп */}
+      <div
+        className={`fixed bottom-0 inset-x-0 z-50 border-t backdrop-blur-sm transition-colors duration-200 ${dk(isDark, 'bg-white/90 border-gray-200', 'bg-gray-900/90 border-gray-700')}`}
+        style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
+      >
+        <div className="max-w-6xl mx-auto px-3 pt-2">
+          <ControlPanel
           isPlaying={isPlaying}
           isPaused={isPaused}
           isTrainingMode={isTrainingMode}
@@ -1222,7 +1231,8 @@ const App: React.FC = () => {
           onGoToPreviousSentence={handleGoToPreviousSentence}
           onGoToNextSentence={handleGoToNextSentence}
           t={t}
-        />
+          />
+        </div>
       </div>
 
       {/* Поле ввода текста пользователя */}

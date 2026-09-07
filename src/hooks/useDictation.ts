@@ -230,7 +230,7 @@ export default function useDictation({
   }, []);
 
   // Используем нативный TTS — передаём handleUtteranceEnd для цепочки
-  const { speak: ttsSpeak, stop: ttsStop, pause: ttsPause, resume: ttsResume } = useNativeTTS(handleUtteranceEnd);
+  const { speak: ttsSpeak, stop: ttsStop, pause: ttsPause, resume: ttsResume, unlock: ttsUnlock } = useNativeTTS(handleUtteranceEnd);
 
   // «Сырые» функции системного TTS (Android-мост / Web Speech API)
   const ttsSpeakRawRef = useRef<((text: string, l: string, r: number, v?: SpeechSynthesisVoice | null) => void) | null>(null);
@@ -429,5 +429,6 @@ export default function useDictation({
     checkResults,
     isTrainingMode,
     toggleTrainingMode,
+    unlockTTS: ttsUnlock,
   };
 }
